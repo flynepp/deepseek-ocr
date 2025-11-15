@@ -1,0 +1,38 @@
+FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu22.04
+
+# 基础环境
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        python3.10 python3.10-venv python3.10-dev \
+        python3-pip git wget build-essential && \
+    ln -sf /usr/bin/python3.10 /usr/bin/python && \
+    python3 -m pip install --upgrade pip && \
+    rm -rf /var/lib/apt/lists/*
+
+# 安装 PyTorch 2.8.0 nightly + CUDA 12.8
+RUN pip install --upgrade --force-reinstall \
+    torch torchvision torchaudio \
+    --index-url https://download.pytorch.org/whl/nightly/cu128
+
+
+
+# 下载并安装 flash-attn 预编译 wheel
+RUN wget -O /tmp/flash_attn-2.4.3+cu128torch2.8-cp310-cp310-linux_x86_64.whl \
+    https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.2.0/flash_attn-2.4.3+cu128torch2.8-cp310-cp310-linux_x86_64.whl \
+    && pip install /tmp/flash_attn-2.4.3+cu128torch2.8-cp310-cp310-linux_x86_64.whl --no-build-isolation
+
+
+# 复制项目代码
+COPY . /workspace/DeepSeek-OCR
+WORKDIR /workspace/DeepSeek-OCR
+
+# 安装 requirements.txt
+RUN pip install -r requirements.txt
+
+# 复制并执行一键编译脚本
+COPY install_vllm_flashattn.sh /tmp/
+RUN bash /tmp/install_vllm_flashattn.sh
+
+CMD ["tail", "-f", "/dev/null"]
