@@ -39,6 +39,6 @@ WORKDIR /vllm
 RUN pip install "numpy<2" transformers accelerate setuptools_scm
 
 # Build vLLM with CUDA backend
-RUN pip install --no-build-isolation -e .
+# RUN pip install --no-build-isolation -e .
 
 CMD ["tail", "-f", "/dev/null"]
